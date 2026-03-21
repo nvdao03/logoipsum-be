@@ -36,9 +36,14 @@
   },
   "dependencies": {
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/lodash": "^4.17.24",
     "dotenv": "^17.3.1",
     "drizzle-orm": "^0.45.1",
     "express": "^4.22.1",
+    "express-validator": "^7.3.1",
+    "jsonwebtoken": "^9.0.3",
+    "lodash": "^4.17.23",
     "pg": "^8.20.0"
   }
 }
