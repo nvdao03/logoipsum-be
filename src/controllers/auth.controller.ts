@@ -3,7 +3,7 @@ import { ParamsDictionary } from 'express-serve-static-core'
 import { create } from 'lodash'
 import { HTTP_STATUS } from '~/constants/httpStatus'
 import { AUTH_MESSAGE } from '~/constants/message'
-import { SignUpRequestBody } from '~/requests/auth.request'
+import { LogoutRequestBody, SignUpRequestBody } from '~/requests/auth.request'
 import authService from '~/services/auth.service'
 
 // --- Sign Up Controller --- //
@@ -31,5 +31,17 @@ export const signUpController = async (
         update_at: user.update_at
       }
     }
+  })
+}
+
+export const logoutController = async (
+  req: Request<ParamsDictionary, any, LogoutRequestBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { refresh_token } = req.body
+  const result = await authService.logout(refresh_token)
+  return res.status(HTTP_STATUS.OK).json({
+    ...result
   })
 }

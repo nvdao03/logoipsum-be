@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db } from '~/configs/postgreSQL.config'
 import { Roles, TokenType, UserVerifyStatus } from '~/constants/enum'
+import { AUTH_MESSAGE } from '~/constants/message'
 import { refresh_tokens, roles, users } from '~/db/schema'
 import { SignUpRequestBody } from '~/requests/auth.request'
 import hashpasword from '~/utils/ctypto'
@@ -148,6 +149,14 @@ class AuthService {
       decoded_access_token,
       decoded_refresh_token,
       role
+    }
+  }
+
+  // --- Log Out --- //
+  async logout(token: string) {
+    await db.delete(refresh_tokens).where(eq(refresh_tokens.token, token)).returning()
+    return {
+      message: AUTH_MESSAGE.LOGOUT_SUCCESS
     }
   }
 }

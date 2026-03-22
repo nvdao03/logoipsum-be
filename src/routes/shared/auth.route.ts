@@ -1,10 +1,11 @@
 import { Router } from 'express'
-import { signUpController } from '~/controllers/auth.controller'
+import { logoutController, signUpController } from '~/controllers/auth.controller'
 import { wrapHandler } from '~/utils/wrapHandler'
-import { signUpValidator } from '~/middlewares/auth.middleware'
+import { accessTokenValidator, refreshTokenValidator, signUpValidator } from '~/middlewares/auth.middleware'
 
 const router = Router()
 
 router.post('/sign-up', signUpValidator, wrapHandler(signUpController))
+router.post('/logout', accessTokenValidator, refreshTokenValidator, wrapHandler(logoutController))
 
 export default router
