@@ -17,3 +17,8 @@ export interface SignUpRequestBody {
 export interface LogoutRequestBody {
   refresh_token: string
 }
+
+export interface SignInRequestBody {
+  email: string
+  password: string
+}

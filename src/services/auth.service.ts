@@ -15,15 +15,7 @@ class AuthService {
   }
 
   // --- Sign Access Token --- //
-  async signAccessToken({
-    user_id,
-    role,
-    verify
-  }: {
-    user_id: number
-    role: string
-    verify: UserVerifyStatus.Unverifyed
-  }) {
+  async signAccessToken({ user_id, role, verify }: { user_id: number; role: string; verify: UserVerifyStatus }) {
     return signToken({
       payload: {
         user_id,
@@ -146,6 +138,41 @@ class AuthService {
       access_token,
       refresh_token,
       user,
+      decoded_access_token,
+      decoded_refresh_token,
+      role
+    }
+  }
+
+  // --- Sign In --- //
+  async signIn({ id, role_id, verify }: { id: number; role_id: number; verify: UserVerifyStatus }) {
+    const [role] = await db.select().from(roles).where(eq(roles.id, role_id)).limit(1)
+    const [access_token, refresh_token] = await Promise.all([
+      this.signAccessToken({ user_id: id, role: role.name, verify }),
+      this.signRefreshToken({ user_id: id, role: role.name, verify })
+    ])
+    const [decoded_access_token, decoded_refresh_token] = await Promise.all([
+      verifyToken({
+        token: access_token,
+        secretOrPublicKey: process.env.JWT_SECRET_ACCESS_TOKEN as string
+      }),
+      verifyToken({
+        token: refresh_token,
+        secretOrPublicKey: process.env.JWT_SECRET_REFRESH_TOKEN as string
+      })
+    ])
+    await db
+      .insert(refresh_tokens)
+      .values({
+        user_id: id,
+        token: refresh_token,
+        iat: new Date(decoded_refresh_token.iat * 1000),
+        exp: new Date(decoded_refresh_token.exp * 1000)
+      })
+      .returning()
+    return {
+      access_token,
+      refresh_token,
       decoded_access_token,
       decoded_refresh_token,
       role

@@ -1,12 +1,12 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { checkSchema } from 'express-validator'
-import { JsonWebTokenError } from 'jsonwebtoken'
 import { db } from '~/configs/postgreSQL.config'
 import { HTTP_STATUS } from '~/constants/httpStatus'
 import { AUTH_MESSAGE } from '~/constants/message'
-import { refresh_tokens, users } from '~/db/schema'
-import { TokenPayload } from '~/requests/auth.request'
+import { refresh_tokens, User, users } from '~/db/schema'
+import { SignInRequestBody, TokenPayload } from '~/requests/auth.request'
 import authService from '~/services/auth.service'
+import hashpasword from '~/utils/ctypto'
 import { ErrorStatus } from '~/utils/Errors'
 import { verifyToken } from '~/utils/jwt'
 import { validate } from '~/utils/validation'
@@ -143,6 +143,60 @@ export const refreshTokenValidator = validate(
             }
             return true
           }
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+// --- Sign In Validator --- //
+export const signInValidator = validate(
+  checkSchema(
+    {
+      email: {
+        isEmail: {
+          errorMessage: AUTH_MESSAGE.EMAIL_INVALID
+        },
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            if (!value) {
+              throw new ErrorStatus({
+                message: AUTH_MESSAGE.EMAIL_NOT_EMPTY,
+                status: HTTP_STATUS.UNAUTHORIZED
+              })
+            }
+            const { password } = req.body as SignInRequestBody
+            const hassPassword = hashpasword(password)
+            const [user] = await db
+              .select()
+              .from(users)
+              .where(and(eq(users.email, value), eq(users.password, hassPassword)))
+              .limit(1)
+            if (!user) {
+              throw new ErrorStatus({
+                message: AUTH_MESSAGE.USER_NOT_FOUND,
+                status: HTTP_STATUS.NOT_FOUND
+              })
+            }
+            req.user = user as User
+            return true
+          }
+        }
+      },
+      password: {
+        isString: true,
+        notEmpty: {
+          errorMessage: AUTH_MESSAGE.PASSWORD_NOT_EMPTY
+        },
+        trim: true,
+        isLength: {
+          options: {
+            min: 6,
+            max: 180
+          },
+          errorMessage: AUTH_MESSAGE.PASSWORD_INVALID_LENGTH
         }
       }
     },
